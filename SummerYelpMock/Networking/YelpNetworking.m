@@ -7,6 +7,7 @@
 //
 
 #import "YelpNetworking.h"
+#import "YelpDataStore.h"
 
 static NSString const * kGrantType = @"client_credentials";
 static NSString const * kClient_id = @"JwfGuWoALYtBLF7qx7ji_A";
@@ -73,6 +74,8 @@ typedef void (^TokenPendingTask)(NSString *token);
         NSURLSessionDataTask *dataTask = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
             NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data options:NULL error:nil];
             if (!error) {
+                NSArray<YelpDataModel *> *dataModelArray = [YelpDataModel buildDataModelArrayFromDictionaryArray:dict[@"businesses"]];
+                [YelpDataStore sharedInstance].dataModels = dataModelArray;
                 completionBlock([YelpDataModel buildDataModelArrayFromDictionaryArray:dict[@"businesses"]]);
             }
         }];
