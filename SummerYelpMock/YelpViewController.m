@@ -11,6 +11,7 @@
 #import "YelpNetworking.h"
 #import "YelpTableViewCell.h"
 #import "YelpDataStore.h"
+#import "DetailYelpViewController.h"
 @import CoreLocation;
 
 @interface YelpViewController () <UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate, CLLocationManagerDelegate>
@@ -61,6 +62,14 @@
     return 100;
 }
 
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    DetailYelpViewController *detailVC = [[DetailYelpViewController alloc] initWithDataModel:self.dataModels[indexPath.row]];
+    [self.navigationController pushViewController:detailVC animated:YES];
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+}
+
+
 #pragma mark - UITableViewDataSource
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
@@ -101,7 +110,7 @@
     CLLocation *loc = [[YelpDataStore sharedInstance] userLocation];
     if (!loc) {
         // mock loc
-        CLLocation *loc = [[CLLocation alloc] initWithLatitude:37.3263625 longitude:-122.027210];
+        loc = [[CLLocation alloc] initWithLatitude:37.3263625 longitude:-122.027210];
     }
     
     // the following code the key that we can finally make our table be able to search based on user’s input
