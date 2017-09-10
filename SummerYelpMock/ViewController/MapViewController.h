@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "DetailYelpViewController.h"
 
 @interface MapViewController : UIViewController
 

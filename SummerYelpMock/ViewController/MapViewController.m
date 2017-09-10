@@ -65,6 +65,7 @@
     if ([[YelpDataStore sharedInstance] userLocation]) {
         [self.mapView setCenterCoordinate:[[YelpDataStore sharedInstance] userLocation].coordinate animated:YES];
     }
+    self.navigationItem.title = @"Map";
 }
 
 - (void)updateAnnotation
@@ -74,7 +75,15 @@
     [self.mapView addAnnotations:annotations];
 }
 
-#pragma mark - Map methods
+- (void)mapView:(MKMapView *)mapView annotationView:(MKAnnotationView *)view calloutAccessoryControlTapped:(UIControl *)control
+{
+    YelpAnnotation *annotation = view.annotation;
+    DetailYelpViewController *detailVC = [[DetailYelpViewController alloc] initWithDataModel:annotation.dataModel];
+    [self.navigationController pushViewController:detailVC animated:YES];
+//    [self presentViewController:detailVC animated:YES completion:nil];
+
+}
+
 
 // Show customized callout for each business annotation
 - (void)mapView:(MKMapView *)mapView didSelectAnnotationView:(MKAnnotationView *)view {
@@ -88,6 +97,9 @@
     UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 40, 40)];
     [imageView setImageWithURL:[NSURL URLWithString:annotation.dataModel.imageUrl]];
     view.leftCalloutAccessoryView = imageView;
+    view.rightCalloutAccessoryView = [UIButton buttonWithType:UIButtonTypeDetailDisclosure];
 }
+
+
 
 @end

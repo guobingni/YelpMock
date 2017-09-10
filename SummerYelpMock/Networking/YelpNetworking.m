@@ -72,11 +72,13 @@ typedef void (^TokenPendingTask)(NSString *token);
         NSString *headerToken = [NSString stringWithFormat:@"Bearer %@",self.token];
         [request addValue:headerToken forHTTPHeaderField:@"Authorization"];
         NSURLSessionDataTask *dataTask = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-            NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data options:NULL error:nil];
-            if (!error) {
-                NSArray<YelpDataModel *> *dataModelArray = [YelpDataModel buildDataModelArrayFromDictionaryArray:dict[@"businesses"]];
-                [YelpDataStore sharedInstance].dataModels = dataModelArray;
-                completionBlock([YelpDataModel buildDataModelArrayFromDictionaryArray:dict[@"businesses"]]);
+            if (data) {
+                NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data options:NULL error:nil];
+                if (!error) {
+                    NSArray<YelpDataModel *> *dataModelArray = [YelpDataModel buildDataModelArrayFromDictionaryArray:dict[@"businesses"]];
+                    [YelpDataStore sharedInstance].dataModels = dataModelArray;
+                    completionBlock([YelpDataModel buildDataModelArrayFromDictionaryArray:dict[@"businesses"]]);
+                }    
             }
         }];
         [dataTask resume];
