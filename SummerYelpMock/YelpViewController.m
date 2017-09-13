@@ -12,6 +12,8 @@
 #import "YelpTableViewCell.h"
 #import "YelpDataStore.h"
 #import "DetailYelpViewController.h"
+#import "FilterViewController.h"
+
 @import CoreLocation;
 
 @interface YelpViewController () <UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate, CLLocationManagerDelegate>
@@ -54,6 +56,12 @@
     self.searchBar.delegate = self;
     self.searchBar.tintColor = [UIColor lightGrayColor];
     self.navigationItem.titleView = self.searchBar;
+}
+
+- (void) didTapSettings
+{
+    FilterViewController *filterVC = [[FilterViewController alloc] init];
+    [self.navigationController pushViewController:filterVC animated:YES];
 }
 
 #pragma mark - UITableViewDelegate

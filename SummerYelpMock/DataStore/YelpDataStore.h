@@ -16,6 +16,9 @@
 @property (nonatomic, copy) NSArray <YelpDataModel *> *dataModels;
 @property (nonatomic) CLLocation *userLocation;
 
+@property (nonatomic) NSString *priceParameter;
+@property (nonatomic) NSMutableSet *selectedCategories;
+
 + (YelpDataStore *)sharedInstance;
 @end
 
