@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "YelpDataStore.h"
 
 @interface PriceTableViewCell : UITableViewCell
 

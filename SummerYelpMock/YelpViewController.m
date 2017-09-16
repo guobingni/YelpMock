@@ -22,6 +22,8 @@
 @property (nonatomic, copy) NSArray <YelpDataModel *>*dataModels;
 @property (nonatomic) UISearchBar *searchBar;
 @property (nonatomic, strong) CLLocationManager *locationManager;
+@property (nonatomic) UIRefreshControl *refreshControl;
+@property (nonatomic) UIActivityIndicatorView *infiniteLoadingIndicator;
 
 @end
 
@@ -42,7 +44,7 @@
 
     [self.tableView registerNib:[UINib nibWithNibName:@"YelpTableViewCell" bundle:nil] forCellReuseIdentifier:@"YelpTableViewCell"];
     CLLocation *loc = [[CLLocation alloc] initWithLatitude:37.3263625 longitude:-122.027210];
-    [[YelpNetworking sharedInstance] fetchRestaurantsBasedOnLocation:loc term:@"sushi" completionBlock:^(NSArray<YelpDataModel *> *dataModelArray) {
+    [[YelpNetworking sharedInstance] fetchRestaurantsBasedOnLocation:loc term:@"restaurant" parameters:[self _generateNetworRelatedParaMeters] completionBlock:^(NSArray<YelpDataModel *> *dataModelArray) {
         self.dataModels = dataModelArray;
         dispatch_async(dispatch_get_main_queue(), ^{
              [self.tableView reloadData];
@@ -56,12 +58,59 @@
     self.searchBar.delegate = self;
     self.searchBar.tintColor = [UIColor lightGrayColor];
     self.navigationItem.titleView = self.searchBar;
+    
+    self.refreshControl = [[UIRefreshControl alloc]init];
+    [self.tableView addSubview:self.refreshControl];
+    [self.refreshControl addTarget:self action:@selector(didPullToRefresh) forControlEvents:UIControlEventValueChanged];
+    self.infiniteLoadingIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+    self.tableView.tableFooterView = self.infiniteLoadingIndicator;
 }
 
 - (void) didTapSettings
 {
     FilterViewController *filterVC = [[FilterViewController alloc] init];
     [self.navigationController pushViewController:filterVC animated:YES];
+}
+
+- (void)didPullToRefresh
+{
+    CLLocation *loc = [[YelpDataStore sharedInstance] userLocation];
+    
+    if (!loc) {
+        //mock loc
+        loc = [[CLLocation alloc] initWithLatitude:37.3263625 longitude:-122.027210];
+    }
+    [self.refreshControl beginRefreshing];
+    [[YelpNetworking sharedInstance] fetchRestaurantsBasedOnLocation:loc term:self.searchBar.text ? :@"restaurant" parameters:[self _generateNetworRelatedParaMeters]completionBlock:^(NSArray<YelpDataModel *> *dataModelArray) {
+        self.dataModels = dataModelArray;
+        [self.refreshControl endRefreshing];
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.tableView reloadData];
+        });
+    }];
+}
+
+- (NSDictionary<NSString *, NSString *> *)_generateNetworRelatedParaMeters
+{
+    NSMutableDictionary * dict = [NSMutableDictionary new];
+    NSString *categories = @"";
+    for (NSString *string in [[YelpDataStore sharedInstance] selectedCategories]) {
+        if (categories.length) {
+            [categories stringByAppendingString:@","];
+            [categories stringByAppendingString:string];
+        } else {
+            categories = string;
+        }
+    }
+    if ([categories length]) {
+        [dict setObject:categories forKey:@"categories"];
+    }
+    
+    if ([[YelpDataStore sharedInstance] priceParameter]) {
+        [dict setObject:[[YelpDataStore sharedInstance] priceParameter] forKey:@"price"];
+    }
+    return [dict copy];
 }
 
 #pragma mark - UITableViewDelegate
@@ -83,6 +132,31 @@
 {
     YelpTableViewCell *cell =  [tableView dequeueReusableCellWithIdentifier:@"YelpTableViewCell"];
     [cell updateBasedOnDataModel:self.dataModels[indexPath.row]];
+    if (indexPath.row == [self.dataModels count] - 4) {
+        NSMutableDictionary *parameter = [[self _generateNetworRelatedParaMeters] mutableCopy];
+        [parameter setObject:[@([self.dataModels count]) stringValue] forKey:@"offset"];
+        [self.infiniteLoadingIndicator startAnimating];
+        
+        CLLocation *loc = [[YelpDataStore sharedInstance] userLocation];
+        if (!loc) {
+            //mock loc
+            loc = [[CLLocation alloc] initWithLatitude:37.3263625 longitude:-122.027210];
+        }
+        
+        [[YelpNetworking sharedInstance] fetchRestaurantsBasedOnLocation:loc term:self.searchBar.text ?: @"restaurant" parameters:parameter completionBlock:^(NSArray<YelpDataModel *> *dataModelArray)  {
+            [self.infiniteLoadingIndicator stopAnimating];
+            if ([dataModelArray count]) {
+                NSMutableArray *mut = [self.dataModels mutableCopy];
+                [mut addObjectsFromArray:dataModelArray];
+                self.dataModels = [mut copy];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self.tableView reloadData];
+                });
+            }
+            
+            
+        }];
+    }
     return cell;
 }
 
@@ -123,7 +197,7 @@
     
     // the following code the key that we can finally make our table be able to search based on user’s input
     
-    [[YelpNetworking sharedInstance] fetchRestaurantsBasedOnLocation:loc term:searchBar.text completionBlock:^(NSArray<YelpDataModel *> *dataModelArray) {
+    [[YelpNetworking sharedInstance] fetchRestaurantsBasedOnLocation:loc term:searchBar.text parameters:[self _generateNetworRelatedParaMeters] completionBlock:^(NSArray<YelpDataModel *> *dataModelArray) {
         self.dataModels = dataModelArray;
         
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -147,9 +221,9 @@
     
     [[YelpDataStore sharedInstance] setUserLocation:currentLocation];
     
-    //[manager stopUpdatingLocation];
+    [manager stopUpdatingLocation];
     NSLog(@"current location %lf %lf", currentLocation.coordinate.latitude, currentLocation.coordinate.longitude);
-    [[YelpNetworking sharedInstance] fetchRestaurantsBasedOnLocation:currentLocation term:@"restaurant" completionBlock:^(NSArray<YelpDataModel *> *dataModelArray) {
+    [[YelpNetworking sharedInstance] fetchRestaurantsBasedOnLocation:currentLocation term:@"restaurant" parameters:[self _generateNetworRelatedParaMeters] completionBlock:^(NSArray<YelpDataModel *> *dataModelArray) {
         self.dataModels = dataModelArray;
         
         dispatch_async(dispatch_get_main_queue(), ^{

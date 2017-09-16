@@ -27,6 +27,9 @@
                             <segment title=""/>
                             <segment title=""/>
                         </segments>
+                        <connections>
+                            <action selector="didSelectSegment:" destination="KGk-i7-Jjw" eventType="valueChanged" id="y8l-Ym-Vyj"/>
+                        </connections>
                     </segmentedControl>
                 </subviews>
                 <constraints>
